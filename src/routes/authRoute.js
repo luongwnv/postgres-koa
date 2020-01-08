@@ -2,12 +2,13 @@ const Router = require('koa-router');
 const passport = require('koa-passport');
 const fs = require('fs');
 const path = require('path');
-const BASE_PATH = path.join(__dirname, 'views');
 
 const queries = require('../queries/userQuery');
 const helpers = require('../helper/helpers');
+const jwt = require("../auth/jwt");
 
 const router = new Router();
+const BASE_PATH = path.join(__dirname, 'views');
 
 router.get('/auth/register', async(ctx) => {
     ctx.type = 'html';
@@ -47,9 +48,20 @@ router.post('/auth/login', async(ctx) => {
     //         ctx.body = { status: 'error' };
     //     }
     // })(ctx);
-    console.log(ctx.request.body);
-    ctx.status = 400;
-    ctx.body = { status: 'success' };
+    let username = ctx.request.body.username;
+    let password = ctx.request.body.password;
+
+    if (username === "luognvn1511" && password === "pass123") {
+        ctx.body = {
+            token: jwt.issue({
+                user: "user",
+                role: "admin"
+            })
+        }
+    } else {
+        ctx.status = 401;
+        ctx.body = { error: "Invalid login" }
+    }
 });
 
 router.get('/auth/logout', async(ctx) => {

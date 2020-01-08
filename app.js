@@ -13,6 +13,10 @@ const PORT = process.env.PORT || 3000;
 
 const Router = require('koa-router');
 const router = new Router();
+const securedRouter = new Router();
+
+const jwt = require("./src/auth/jwt");
+// app.use(jwt.errorHandler()).use(jwt.jwt());
 
 // tao sessions
 app.keys = ['luong_pro123'];
@@ -25,6 +29,10 @@ app.use(bodyParser());
 require('./src/auth/auth');
 app.use(passport.initialize());
 app.use(passport.session());
+
+// khoi tao secure route
+// app.use(authRoutes.routes()).use(router.allowedMethods());
+// app.use(securedRouter.routes()).use(securedRouter.allowedMethods());
 
 // khai bao routes
 app.use(userRoutes.routes());
