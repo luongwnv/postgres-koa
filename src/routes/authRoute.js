@@ -37,15 +37,19 @@ router.get('/auth/login', async(ctx) => {
 });
 
 router.post('/auth/login', async(ctx) => {
-    return passport.authenticate('local', (err, user, info, status) => {
-        if (user) {
-            ctx.login(user);
-            ctx.redirect('/auth/status');
-        } else {
-            ctx.status = 400;
-            ctx.body = { status: 'error' };
-        }
-    })(ctx);
+    // return passport.authenticate('local', (err, user, info, status) => {
+    //     if (user) {
+    //         ctx.login(user);
+    //         // ctx.redirect('/auth/status');
+    //         ctx.body = { status: 'success' };
+    //     } else {
+    //         ctx.status = 400;
+    //         ctx.body = { status: 'error' };
+    //     }
+    // })(ctx);
+    console.log(ctx.request.body);
+    ctx.status = 400;
+    ctx.body = { status: 'success' };
 });
 
 router.get('/auth/logout', async(ctx) => {
