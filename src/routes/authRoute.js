@@ -3,9 +3,10 @@ const passport = require('koa-passport');
 const fs = require('fs');
 const path = require('path');
 
-const queries = require('../queries/userQuery');
 const helpers = require('../helper/helpers');
 const jwt = require("../auth/jwt");
+const userService = require('../services/userService');
+const auth = require('../auth/jwt');
 
 const router = new Router();
 const BASE_PATH = path.join(__dirname, 'views');
@@ -16,16 +17,16 @@ router.get('/auth/register', async(ctx) => {
 });
 
 router.post('/auth/register', async(ctx) => {
-    const user = await queries.addUser(ctx.request.body);
-    return passport.authenticate('local', (err, user, info, status) => {
-        if (user) {
-            ctx.login(user);
-            ctx.redirect('/auth/status');
-        } else {
-            ctx.status = 400;
-            ctx.body = { status: 'error' };
-        }
-    })(ctx);
+    const user = await userService.addUser(ctx.request.body, ctx);
+    // return passport.authenticate('local', (err, user, info, status) => {
+    //     if (user) {
+    //         ctx.login(user);
+    //         ctx.redirect('/auth/status');
+    //     } else {
+    //         ctx.status = 400;
+    //         ctx.body = { status: 'error' };
+    //     }
+    // })(ctx);
 });
 
 router.get('/auth/login', async(ctx) => {
@@ -38,29 +39,16 @@ router.get('/auth/login', async(ctx) => {
 });
 
 router.post('/auth/login', async(ctx) => {
-    // return passport.authenticate('local', (err, user, info, status) => {
-    //     if (user) {
-    //         ctx.login(user);
-    //         // ctx.redirect('/auth/status');
-    //         ctx.body = { status: 'success' };
-    //     } else {
-    //         ctx.status = 400;
-    //         ctx.body = { status: 'error' };
-    //     }
-    // })(ctx);
-    let username = ctx.request.body.username;
-    let password = ctx.request.body.password;
-
-    if (username === "luognvn1511" && password === "pass123") {
+    const user = await userService.checkUser(ctx.request.body, ctx);
+    if (user) {
+        console.log(user);
         ctx.body = {
-            token: jwt.issue({
-                user: "user",
-                role: "admin"
+            code: 1,
+            massage: 'Login successed',
+            token: jwt.createToken({
+                username: user
             })
-        }
-    } else {
-        ctx.status = 401;
-        ctx.body = { error: "Invalid login" }
+        };
     }
 });
 

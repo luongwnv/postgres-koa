@@ -1,7 +1,19 @@
 const jwt = require("koa-jwt");
 const jsonwebtoken = require("jsonwebtoken");
-const SECRET = "luong_pro123";
-const jwtInstance = jwt({ secret: SECRET });
+const config = require('../config/config.json');
+
+let jwtsecret = config.jwt.secret;
+
+const jwtInstance = jwt({ secret: jwtsecret }).unless({
+    path: [
+        // nhung route khong can authen
+        '/auth'
+    ]
+});
+
+function authenticate(ctx, next) {
+    ctx.body = { message: 'abc' };
+};
 
 function JWTErrorHandler(ctx, next) {
     return next().catch((err) => {
@@ -16,10 +28,11 @@ function JWTErrorHandler(ctx, next) {
     });
 };
 
-// helper function
-module.exports.issue = (payload) => {
-    return jsonwebtoken.sign(payload, SECRET);
+// tao token su dung jwt
+module.exports.createToken = (payload) => {
+    return jsonwebtoken.sign(payload, jwtsecret);
 };
 
 module.exports.jwt = () => jwtInstance;
+module.exports.authenticate = () => authenticate;
 module.exports.errorHandler = () => JWTErrorHandler;

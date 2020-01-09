@@ -16,7 +16,6 @@ const router = new Router();
 const securedRouter = new Router();
 
 const jwt = require("./src/auth/jwt");
-// app.use(jwt.errorHandler()).use(jwt.jwt());
 
 // tao sessions
 app.keys = ['luong_pro123'];
@@ -30,7 +29,10 @@ require('./src/auth/auth');
 app.use(passport.initialize());
 app.use(passport.session());
 
-// khoi tao secure route
+// su dung guard de chan truy cap route
+// app.use(jwt.errorHandler()).use(jwt.jwt());
+
+// // khoi tao secure route
 // app.use(authRoutes.routes()).use(router.allowedMethods());
 // app.use(securedRouter.routes()).use(securedRouter.allowedMethods());
 
@@ -39,12 +41,37 @@ app.use(userRoutes.routes());
 app.use(taskRoutes.routes());
 app.use(authRoutes.routes());
 
-router.get('/a', async(ctx) => {
-    ctx.body = {
-        status: 'success',
-        message: 'hello, world!'
-    };
-})
+const ProtectedRoutes = new Router();
+ProtectedRoutes.use((req, res, next) => {
+
+    // check header for the token
+    var token = req.headers['access-token'];
+
+    // decode token
+    if (token) {
+
+        // verifies secret and checks if the token is expired
+        jwt.verify(token, app.get('Secret'), (err, decoded) => {
+            if (err) {
+                return res.json({ message: 'invalid token' });
+            } else {
+                // if everything is good, save to request for use in other routes
+                req.decoded = decoded;
+                next();
+            }
+        });
+
+    } else {
+
+        // if there is no token  
+
+        res.send({
+
+            message: 'No token provided.'
+        });
+
+    }
+});
 
 // khoi tao server
 const server = app.listen(PORT, () => {
