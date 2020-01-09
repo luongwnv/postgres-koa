@@ -1,53 +1,74 @@
-const Sequelize = require('sequelize');
-const { Client } = require('pg');
-const database = require('../config/database');
+const Router = require('koa-router');
+const passport = require('koa-passport');
+const fs = require('fs');
+const path = require('path');
 
-const config = require('../config/config.json');
+const helpers = require('../helper/helpers');
+const jwt = require("../auth/jwt");
+const userService = require('../services/userService');
+const auth = require('../auth/jwt');
 
-// khai bao config connect toi postgres
-let defaultConfig = config.local;
-let userdb = defaultConfig.username;
-let password = defaultConfig.password;
-let host = defaultConfig.host;
-let port = defaultConfig.port;
-let dbName = defaultConfig.database;
+const router = new Router();
+const BASE_PATH = path.join(__dirname, 'views');
 
-// url posgres connect
-DATABASE_URL = `postgres://${userdb}:${password}@${host}:${port}/${dbName}`;
-const client = new Client({
-    connectionString: DATABASE_URL
+router.get('/auth/register', async(ctx) => {
+    ctx.type = 'html';
+    ctx.body = fs.createReadStream(path.join(BASE_PATH, 'register.html'));
 });
 
-client.connect();
+router.post('/auth/register', async(ctx) => {
+    const user = await userService.addUser(ctx.request.body, ctx);
+});
 
-// const User = database.define(
-//     'users', {
-//         nickname: {
-//             type: Sequelize.TEXT
-//         }
-//     }, { timestamps: false }
-// );
+router.get('/auth/login', async(ctx) => {
+    if (!helpers.ensureAuthenticated(ctx)) {
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'login.html'));
+    } else {
+        ctx.redirect('/auth/status');
+    }
+});
 
-// User.readAll = async(req, res) => {
-//     try {
-//         const users = await User.findAll();
-//         return res.send({ users });
-//     } catch (error) {
-//         return res.send(error);
-//     }
-// };
+router.post('/auth/login', async(ctx) => {
+    const user = await userService.checkUser(ctx.request.body, ctx);
+    if (user) {
+        console.log(user);
+        ctx.body = {
+            code: 1,
+            massage: 'Login successed',
+            token: jwt.createToken({
+                username: user
+            })
+        };
+    }
+});
 
-exports.getUser = function(ctx) {
-    let sqlq = `SELECT * 
-                FROM Users;`;
-    client.connect(function(err) {
-        if (err) {}
-        client.query(sqlq, function(err, result) {
-            if (err) {
-                console.log(err);
-                ctx.body = { massage: err };
-            }
-            return result.rows[0];
-        });
-    });
-};
+router.get('/auth/logout', async(ctx) => {
+    if (helpers.ensureAuthenticated(ctx)) {
+        ctx.logout();
+        ctx.redirect('/auth/login');
+    } else {
+        ctx.body = { success: false };
+        ctx.throw(401);
+    }
+});
+
+router.get('/auth/status', async(ctx) => {
+    if (helpers.ensureAuthenticated(ctx)) {
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'status.html'));
+    } else {
+        ctx.redirect('/auth/login');
+    }
+});
+
+router.get('/auth/admin', async(ctx) => {
+    if (await helpers.ensureAdmin(ctx)) {
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'admin.html'));
+    } else {
+        ctx.redirect('/auth/login');
+    }
+});
+
+module.exports = router;
