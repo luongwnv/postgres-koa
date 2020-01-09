@@ -4,18 +4,16 @@ const config = require('../config/config.json');
 
 let jwtsecret = config.jwt.secret;
 
+// config serect key va unless nhung route khong can authen
 const jwtInstance = jwt({ secret: jwtsecret }).unless({
     path: [
         // nhung route khong can authen
-        '/auth'
+        /\/auth*/,
     ]
 });
 
-function authenticate(ctx, next) {
-    ctx.body = { message: 'abc' };
-};
-
-function JWTErrorHandler(ctx, next) {
+// function handle nhung route nao chua authen
+function jwtErrorHandler(ctx, next) {
     return next().catch((err) => {
         if (401 == err.status) {
             ctx.status = 401;
@@ -35,4 +33,4 @@ module.exports.createToken = (payload) => {
 
 module.exports.jwt = () => jwtInstance;
 module.exports.authenticate = () => authenticate;
-module.exports.errorHandler = () => JWTErrorHandler;
+module.exports.errorHandler = () => jwtErrorHandler;

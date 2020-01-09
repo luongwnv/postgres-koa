@@ -1,19 +1,19 @@
 const Router = require('koa-router');
-//const queries = require('../db/queries/movies');
+const passport = require('koa-passport');
+const fs = require('fs');
+const path = require('path');
+
+const helpers = require('../helper/helpers');
+const jwt = require("../auth/jwt");
+const taskService = require('../services/taskService');
+const auth = require('../auth/jwt');
+const authenticate = require('../auth/jwt')
+    //const BASE_URL = `/api/tasks`;
 
 const router = new Router();
-const BASE_URL = `/api/tasks`;
 
-router.get(BASE_URL, async(ctx) => {
-    // try {
-    //     const movies = await queries.getAllMovies();
-    //     ctx.body = {
-    //         status: 'success',
-    //         data: movies
-    //     };
-    // } catch (err) {
-    //     console.log(err)
-    // }
-})
+router.post('/api/tasks', async(ctx) => {
+    await taskService.getAllTaskForUser(ctx.request.body, ctx);
+});
 
 module.exports = router;
