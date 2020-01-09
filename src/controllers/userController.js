@@ -20,8 +20,8 @@ router.post('/auth/register', async(ctx) => {
     const user = await userService.addUser(ctx.request.body, ctx);
 });
 
-router.get('/auth/login', async(ctx) => {
-    if (!helpers.ensureAuthenticated(ctx)) {
+router.get('/auth/login', async(ctx, next) => {
+    if (!helpers.checkAuthenticated(ctx, next)) {
         ctx.type = 'html';
         ctx.body = fs.createReadStream(path.join(BASE_PATH, 'login.html'));
     } else {
@@ -30,6 +30,7 @@ router.get('/auth/login', async(ctx) => {
 });
 
 router.post('/auth/login', async(ctx) => {
+    console.log('login');
     const user = await userService.checkUser(ctx.request.body, ctx);
     if (user) {
         console.log(user);
@@ -43,8 +44,8 @@ router.post('/auth/login', async(ctx) => {
     }
 });
 
-router.get('/auth/logout', async(ctx) => {
-    if (helpers.ensureAuthenticated(ctx)) {
+router.get('/auth/logout', async(ctx, next) => {
+    if (helpers.checkAuthenticated(ctx, next)) {
         ctx.logout();
         ctx.redirect('/auth/login');
     } else {
@@ -53,19 +54,10 @@ router.get('/auth/logout', async(ctx) => {
     }
 });
 
-router.get('/auth/status', async(ctx) => {
-    if (helpers.ensureAuthenticated(ctx)) {
+router.get('/auth/home', async(ctx, next) => {
+    if (helpers.checkAuthenticated(ctx, next)) {
         ctx.type = 'html';
-        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'status.html'));
-    } else {
-        ctx.redirect('/auth/login');
-    }
-});
-
-router.get('/auth/admin', async(ctx) => {
-    if (await helpers.ensureAdmin(ctx)) {
-        ctx.type = 'html';
-        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'admin.html'));
+        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'home.html'));
     } else {
         ctx.redirect('/auth/login');
     }

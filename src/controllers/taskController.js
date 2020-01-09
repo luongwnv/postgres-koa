@@ -8,12 +8,25 @@ const jwt = require("../auth/jwt");
 const taskService = require('../services/taskService');
 const auth = require('../auth/jwt');
 const authenticate = require('../auth/jwt')
-    //const BASE_URL = `/api/tasks`;
+
+const BASE_URL = `/api`;
 
 const router = new Router();
 
-router.post('/api/tasks', async(ctx) => {
-    await taskService.getAllTaskForUser(ctx.request.body, ctx);
+// get all tat ca cac task
+router.post(BASE_URL + '/tasks', async(ctx) => {
+    await taskService.getAllTaskForUser(ctx);
 });
+
+// them va sua task
+router.post(BASE_URL + '/add-task', async(ctx) => {
+    await taskService.createTask(ctx);
+});
+
+// xoa 1 task theo id
+router.post(BASE_URL + '/delete-task', async(ctx) => {
+    await taskService.deleteTaskById(ctx);
+});
+
 
 module.exports = router;
