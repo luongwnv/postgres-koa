@@ -32,14 +32,20 @@ router.get('/auth/login', async(ctx, next) => {
 router.post('/auth/login', async(ctx) => {
     console.log('login');
     const user = await userService.checkUser(ctx.request.body, ctx);
-    if (user) {
+    if (user.length > 0) {
         console.log(user);
         ctx.body = {
             code: 1,
+            userid: user[0].id,
             massage: 'Login successed',
             token: jwt.createToken({
                 username: user
             })
+        };
+    } else {
+        ctx.body = {
+            code: 0,
+            massage: 'Login failed',
         };
     }
 });

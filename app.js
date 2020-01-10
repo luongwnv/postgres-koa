@@ -3,6 +3,7 @@ const bodyParser = require('koa-bodyparser');
 const Router = require('koa-router');
 const session = require('koa-session');
 const passport = require('koa-passport');
+const cors = require('@koa/cors');
 
 const store = require('./src/config/session');
 const jwt = require("./src/auth/jwt");
@@ -17,6 +18,9 @@ app.use(session({ store }, app));
 
 // khai bao su dung body parser
 app.use(bodyParser());
+
+// config cros cho truy cap 
+app.use(cors());
 
 // khoi tao authen session
 require('./src/auth/auth');
