@@ -16,7 +16,7 @@ function getAllTaskForUser(ctx) {
             't.isdelete', false
         )
         .select(
-            't.taskname', 't.description', 't.createdate', 't.updatedate'
+            't.id', 't.taskname', 't.description', 't.createdate', 't.updatedate'
         )
         .returning('*')
         .bind(console)

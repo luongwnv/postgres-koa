@@ -2,6 +2,7 @@ const Router = require('koa-router');
 const passport = require('koa-passport');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const helpers = require('../helper/helpers');
 const jwt = require("../auth/jwt");
@@ -9,30 +10,28 @@ const userService = require('../services/userService');
 const auth = require('../auth/jwt');
 
 const router = new Router();
-const BASE_PATH = path.join(__dirname, 'views');
 
-router.get('/auth/register', async(ctx) => {
-    ctx.type = 'html';
-    ctx.body = fs.createReadStream(path.join(BASE_PATH, 'register.html'));
-});
-
+// api register
 router.post('/auth/register', async(ctx) => {
-    const user = await userService.addUser(ctx.request.body, ctx);
-});
-
-router.get('/auth/login', async(ctx, next) => {
-    if (!helpers.checkAuthenticated(ctx, next)) {
-        ctx.type = 'html';
-        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'login.html'));
+    const user = await userService.checkUser(ctx);
+    if (user.length > 0) {
+        ctx.body = {
+            code: 0,
+            massage: 'Username existed'
+        };
     } else {
-        ctx.redirect('/auth/status');
+        await userService.addUser(ctx)
     }
 });
 
+
+// api login
 router.post('/auth/login', async(ctx) => {
+    let userBody = ctx.request.body;
     console.log('login');
-    const user = await userService.checkUser(ctx.request.body, ctx);
-    if (user.length > 0) {
+    const user = await userService.checkUser(ctx);
+    let isLogin = bcrypt.compareSync(userBody.password, user[0].password)
+    if (isLogin) {
         console.log(user);
         ctx.body = {
             code: 1,
@@ -47,25 +46,6 @@ router.post('/auth/login', async(ctx) => {
             code: 0,
             massage: 'Login failed',
         };
-    }
-});
-
-router.get('/auth/logout', async(ctx, next) => {
-    if (helpers.checkAuthenticated(ctx, next)) {
-        ctx.logout();
-        ctx.redirect('/auth/login');
-    } else {
-        ctx.body = { success: false };
-        ctx.throw(401);
-    }
-});
-
-router.get('/auth/home', async(ctx, next) => {
-    if (helpers.checkAuthenticated(ctx, next)) {
-        ctx.type = 'html';
-        ctx.body = fs.createReadStream(path.join(BASE_PATH, 'home.html'));
-    } else {
-        ctx.redirect('/auth/login');
     }
 });
 

@@ -6,64 +6,41 @@ const knex = require('../config/connection');
 //         .select('*')
 //         .where({ id: parseInt(id) });
 // }
-
-// check coi trong db co usernam do chua
-function checkUserExist(username) {
-    return knex('users')
-        .select('*')
-        .where({ username: username })
-        .then(rs => console.log('luong', rs));
-}
-
 // add usernam vao db
-function addUser(user, ctx) {
-    let userExist = checkUserExist(user.username);
-    if (userExist.length > 0) {
-        ctx.body = {
-            code: 0,
-            massage: 'Username existed'
-        };
-        return null;
-    } else {
-        //const salt = bcrypt.genSaltSync();
-        // const hash = bcrypt.hashSync(user.password);
-        let hash = Base64.encode(user.password);
-        return knex('users')
-            .insert({
-                username: user.username,
-                password: hash,
-                createdate: new Date().toISOString(),
-                updatedate: new Date().toISOString(),
-            })
-            .returning('*')
-            .bind(console)
-            .then(results => {
-                ctx.body = {
-                    code: 1,
-                    massage: "Register Successed"
-                };
-            })
-            .catch(err => {
-                console.log('ERROR:', err);
-                ctx.body = {
-                    code: 0,
-                    massage: err
-                };
-            });
-    }
-
+function addUser(ctx) {
+    let user = ctx.request.body
+    let hash = bcrypt.hashSync(user.password);
+    return knex('users')
+        .insert({
+            username: user.username,
+            password: hash,
+            createdate: new Date().toISOString(),
+            updatedate: new Date().toISOString(),
+            isdelete: false
+        })
+        .returning('*')
+        .bind(console)
+        .then(results => {
+            ctx.body = {
+                code: 1,
+                massage: "Register Successed"
+            };
+        })
+        .catch(err => {
+            console.log('ERROR:', err);
+            ctx.body = {
+                code: 0,
+                massage: err
+            };
+        });
 }
 
-function checkUser(user, ctx) {
-    //const salt = bcrypt.genSaltSync();
-    // const hash = bcrypt.hashSync(user.password);
-    let hash = Base64.encode(user.password);
+// login
+function checkUser(ctx) {
+    let user = ctx.request.body
     return knex({ u: 'users' })
         .where(
             'u.username', user.username
-        )
-        .where(
-            'u.password', hash
         )
         .select('*')
         .returning('*')
@@ -75,87 +52,6 @@ function checkUser(user, ctx) {
                 massage: err
             };
         });
-}
-
-let Base64 = {
-    _keyStr: "luong rat pro cac cau ak+/=",
-    encode: function(e) {
-        var t = "";
-        var n, r, i, s, o, u, a;
-        var f = 0;
-        e = Base64._utf8_encode(e);
-        while (f < e.length) {
-            n = e.charCodeAt(f++);
-            r = e.charCodeAt(f++);
-            i = e.charCodeAt(f++);
-            s = n >> 2;
-            o = (n & 3) << 4 | r >> 4;
-            u = (r & 15) << 2 | i >> 6;
-            a = i & 63;
-            if (isNaN(r)) { u = a = 64 } else if (isNaN(i)) { a = 64 }
-            t = t + this._keyStr.charAt(s) + this._keyStr.charAt(o) + this._keyStr.charAt(u) + this._keyStr.charAt(a)
-        }
-        return t
-    },
-    decode: function(e) {
-        var t = "";
-        var n, r, i;
-        var s, o, u, a;
-        var f = 0;
-        e = e.replace(/++[++^A-Za-z0-9+/=]/g, "");
-        while (f < e.length) {
-            s = this._keyStr.indexOf(e.charAt(f++));
-            o = this._keyStr.indexOf(e.charAt(f++));
-            u = this._keyStr.indexOf(e.charAt(f++));
-            a = this._keyStr.indexOf(e.charAt(f++));
-            n = s << 2 | o >> 4;
-            r = (o & 15) << 4 | u >> 2;
-            i = (u & 3) << 6 | a;
-            t = t + String.fromCharCode(n);
-            if (u != 64) { t = t + String.fromCharCode(r) }
-            if (a != 64) { t = t + String.fromCharCode(i) }
-        }
-        t = Base64._utf8_decode(t);
-        return t
-    },
-    _utf8_encode: function(e) {
-        e = e.replace(/\r\n/g, "n");
-        var t = "";
-        for (var n = 0; n < e.length; n++) {
-            var r = e.charCodeAt(n);
-            if (r < 128) { t += String.fromCharCode(r) } else if (r > 127 && r < 2048) {
-                t += String.fromCharCode(r >> 6 | 192);
-                t += String.fromCharCode(r & 63 | 128)
-            } else {
-                t += String.fromCharCode(r >> 12 | 224);
-                t += String.fromCharCode(r >> 6 & 63 | 128);
-                t += String.fromCharCode(r & 63 | 128)
-            }
-        }
-        return t
-    },
-    _utf8_decode: function(e) {
-        var t = "";
-        var n = 0;
-        var r = c1 = c2 = 0;
-        while (n < e.length) {
-            r = e.charCodeAt(n);
-            if (r < 128) {
-                t += String.fromCharCode(r);
-                n++
-            } else if (r > 191 && r < 224) {
-                c2 = e.charCodeAt(n + 1);
-                t += String.fromCharCode((r & 31) << 6 | c2 & 63);
-                n += 2
-            } else {
-                c2 = e.charCodeAt(n + 1);
-                c3 = e.charCodeAt(n + 2);
-                t += String.fromCharCode((r & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
-                n += 3
-            }
-        }
-        return t
-    }
 }
 
 module.exports = {
