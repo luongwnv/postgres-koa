@@ -1,0 +1,158 @@
+<!-- Start search task -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto" id="text">
+            <li class="nav-item active">
+                <button type="button" style="float: right;" class="btn btn-success" onclick="addTask()">Add task</button>
+            </li>
+        </ul>
+        <form class="form-inline my-2 my-lg-0" action="/search" method="post">
+            <div class="input-group">
+                <input type="text" name="taskname" class="form-control" id="myInput" placeholder="Input name of task to search" aria-label="Username">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit" style="margin-left: 10px;">Search</button>
+            </div>
+        </form>
+    </div>
+</nav>
+<!-- End search task -->
+
+<!-- Start show table of task -->
+<div class="container">
+    <div class="card mt-4">
+        <div class="card-body">
+            <ul>
+                <table class="table">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col"></th>
+                            <th scope="col">Done</th>
+                            <th scope="col">Task</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Functions</th>
+                        </tr>
+                        <tbody id="taskTable">
+                            <%  listTaskOfUser = listTaskOfUser.reverse();
+                                for (const [i, item] of listTaskOfUser.entries()) { %>
+                                <tr>
+                                    <th>
+                                        <%= i+1 %>
+                                    </th>
+                                    <% if (item.iscomplete) { %>
+                                    <th><input type="checkbox" checked disabled></th>
+                                    <td>
+                                        <a style="color: red; text-decoration: line-through;">
+                                            <%= item.taskname %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a style="color: red; text-decoration: line-through;">
+                                            <%= item.description %>
+                                        </a>
+                                    </td>
+                                    <% } else { %>
+                                        <th><input type="checkbox" disabled></th>
+                                        <td>
+                                            <a>
+                                                <%= item.taskname %>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a>
+                                                <%= item.description %>
+                                            </a>
+                                        </td>
+                                    <% } %>
+                                    <td>
+                                        <button type="button" class="btn btn-primary" style="width: 100px;" onclick="editTask(<%= item.id %>)">Edit</button>
+                                        <button type="button" class="btn btn-danger" style="width: 100px;" onclick="deleteTask(<%= item.id %>)">Delete</button>
+                                    </td>
+                                </tr>
+                                <% } %>
+                        </tbody>
+                    </thead>
+                </table>
+            </ul>
+        </div>
+    </div>
+</div>
+<!-- End show table of task -->
+
+<!-- Start modal add and edit task-->
+<div class="modal fade" id="taskModal" tabindex="-1" role="dialog" aria-labelledby="taskModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h5 class="modal-title w-100" id="exampleModalLabel">TASK</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+            </div>
+            <form action="/update" method="post" onsubmit="return validateForm()">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label>Task name (*)</label>
+                            <textarea hidden id="taskIdHidden" name="id"></textarea>
+                            <textarea placeholder="Enter task name" class="form-control" rows="1" id="taskName" name="taskname"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea class="form-control" placeholder="Enter description" rows="5" id="description" name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Done</label>
+                            <br/>
+                            <input type="checkbox" id="checkBoxDone" value="true" name="iscomplete">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="width: 100px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100px;">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- End modal add and edit task-->
+
+<!-- Start modal delete task-->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h5 class="modal-title w-100" id="exampleModalLabel">ARE YOU WANT TO DELETE THIS TASK</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+            </div>
+            <form action="/delete" method="post">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label>Task name</label>
+                            <textarea hidden id="taskIdHiddenDel" name="id"></textarea>
+                            <textarea placeholder="Enter task name" disabled class="form-control" rows="1" id="taskNameDel"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea class="form-control" disabled placeholder="Enter description" rows="5" id="descriptionDel"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Done</label>
+                            <br/>
+                            <input type="checkbox" disabled id="checkBoxDoneDel">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="width: 100px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100px;">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- End modal delete task-->
+
+<div id="listTasks" hidden>
+    <%= JSON.stringify(listTaskOfUser) %>
+</div>
+
+<script src="/public/js/home.js"></script>

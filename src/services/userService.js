@@ -1,21 +1,18 @@
 const bcrypt = require('bcryptjs');
-const knex = require('../config/connection');
 
-// function getSingleUser(id) {
-//     return knex('users')
-//         .select('*')
-//         .where({ id: parseInt(id) });
-// }
-// add usernam vao db
-function addUser(ctx) {
-    let user = ctx.request.body
+const knex = require('../config/connection');
+const handlerLog = require('../log/handlerLog');
+
+// add username to db
+const addUser = (ctx) => {
+    let user = ctx.request.body;
     let hash = bcrypt.hashSync(user.password);
     return knex('users')
         .insert({
             username: user.username,
             password: hash,
             createdate: new Date().toISOString(),
-            updatedate: new Date().toISOString(),
+            modifydate: new Date().toISOString(),
             isdelete: false
         })
         .returning('*')
@@ -23,33 +20,34 @@ function addUser(ctx) {
         .then(results => {
             ctx.body = {
                 code: 1,
-                massage: "Register Successed"
+                message: "Register Successed."
             };
         })
         .catch(err => {
-            console.log('ERROR:', err);
+            handlerLog.error(err);
             ctx.body = {
                 code: 0,
-                massage: err
+                message: err
             };
         });
 }
 
-// login
-function checkUser(ctx) {
+// check username login
+const checkUser = (ctx) => {
     let user = ctx.request.body
     return knex({ u: 'users' })
         .where(
             'u.username', user.username
         )
+        .first()
         .select('*')
         .returning('*')
         .bind(console)
         .catch(err => {
-            console.log('ERROR:', err);
+            handlerLog.error(err);
             ctx.body = {
                 code: 0,
-                massage: err
+                message: err
             };
         });
 }

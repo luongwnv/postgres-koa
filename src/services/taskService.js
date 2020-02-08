@@ -1,13 +1,12 @@
-const bcrypt = require('bcryptjs');
-const parseTime = require('postgres-date')
 const knex = require('../config/connection');
+const handlerLog = require('../log/handlerLog');
+const Task = require('../models/taskModel');
 
-// function get het tat ca cac tast ma user do co
-function getAllTaskForUser(ctx) {
-    let dataRequest = ctx.request.body;
+// get all task for that user 
+const getAllForHomePage = (userid) => {
     return knex({ u: 'users', t: 'tasks' })
         .where(
-            't.userid', dataRequest.userid
+            't.userid', userid
         )
         .where(
             't.userid', knex.raw('??', ['u.id'])
@@ -16,7 +15,28 @@ function getAllTaskForUser(ctx) {
             't.isdelete', false
         )
         .select(
-            't.id', 't.taskname', 't.description', 't.createdate', 't.updatedate'
+            't.id', 't.taskname', 't.description', 't.createdate', 't.modifydate', 't.iscomplete'
+        )
+        .returning('*')
+        .bind(console)
+        .catch(err => { handlerLog.error(err) });
+};
+
+// function get all task for user
+const getAllTaskForUser = (ctx) => {
+    let userId = ctx.request.body.userid;
+    return knex({ u: 'users', t: 'tasks' })
+        .where(
+            't.userid', userId
+        )
+        .where(
+            't.userid', knex.raw('??', ['u.id'])
+        )
+        .where(
+            't.isdelete', false
+        )
+        .select(
+            't.id', 't.taskname', 't.description', 't.createdate', 't.modifydate', 't.iscomplete'
         )
         .returning('*')
         .bind(console)
@@ -28,26 +48,26 @@ function getAllTaskForUser(ctx) {
         })
 
     .catch(err => {
-        console.log('ERROR:', err);
+        handlerLog.error(err);
         ctx.body = {
             code: 0,
-            massage: err
+            message: err
         };
     });
 }
 
-// function them va sua task
-function createTask(ctx) {
+// function insert and update task
+const createTask = (ctx) => {
     let dataRequest = ctx.request.body;
     if (!dataRequest.id) {
-        console.log(parseTime(Date.now()));
         return knex('tasks')
             .insert({
                 userid: dataRequest.userid,
                 taskname: dataRequest.taskname,
                 description: dataRequest.description,
                 createdate: new Date().toISOString(),
-                updatedate: new Date().toISOString(),
+                modifydate: new Date().toISOString(),
+                iscomplete: dataRequest.iscomplete,
                 isdelete: false
             })
             .returning('*')
@@ -55,14 +75,14 @@ function createTask(ctx) {
             .then(results => {
                 ctx.body = {
                     code: 1,
-                    massage: 'Add task successed'
+                    message: 'Add task successed'
                 };
             })
             .catch(err => {
-                console.log('ERROR:', err);
+                handlerLog.error(err);
                 ctx.body = {
                     code: 0,
-                    massage: err
+                    message: err
                 };
             });
     } else {
@@ -72,7 +92,8 @@ function createTask(ctx) {
                 userid: dataRequest.userid,
                 taskname: dataRequest.taskname,
                 description: dataRequest.description,
-                updatedate: new Date().toISOString(),
+                modifydate: new Date().toISOString(),
+                iscomplete: dataRequest.iscomplete,
                 isdelete: false
             })
             .decrement({
@@ -84,26 +105,27 @@ function createTask(ctx) {
             .then(results => {
                 ctx.body = {
                     code: 1,
-                    massage: 'Update task successed'
+                    message: 'Update task successed'
                 };
             })
             .catch(err => {
-                console.log('ERROR:', err);
+                handlerLog.error(err);
                 ctx.body = {
                     code: 0,
-                    massage: err
+                    message: err
                 };
             });
     }
 }
 
-// function xoa task theo id
-function deleteTaskById(ctx) {
+// function delete task by id
+const deleteTaskById = (ctx) => {
     let dataRequest = ctx.request.body;
     return knex('tasks')
         .where('id', '=', dataRequest.id)
         .update({
-            updatedate: new Date().toISOString(),
+            modifydate: new Date().toISOString(),
+            iscomplete: true,
             isdelete: true
         })
         .returning('*')
@@ -111,14 +133,69 @@ function deleteTaskById(ctx) {
         .then(results => {
             ctx.body = {
                 code: 1,
-                massage: 'Delete task successed'
+                message: 'Delete task successed'
             };
         })
         .catch(err => {
-            console.log('ERROR:', err);
+            handlerLog.error(err);
             ctx.body = {
                 code: 0,
-                massage: err
+                message: err
+            };
+        });
+}
+
+// function search task by task name for homepage
+const searchTaskForHomePage = (ctx) => {
+    let dataRequest = ctx.request.body;
+    return knex('tasks')
+        .where(
+            'taskname', 'like', `%${dataRequest.taskname}%`
+        )
+        .where(
+            'userid', dataRequest.userid
+        )
+        .where(
+            'isdelete', false
+        )
+        .select(
+            'id', 'taskname', 'description', 'createdate', 'modifydate', 'iscomplete'
+        )
+        .returning('*')
+        .bind(console)
+        .catch(err => { handlerLog.error(err) });
+};
+
+// search task by name
+const searchTaskByName = (ctx) => {
+    let dataRequest = ctx.request.body;
+    return knex('tasks')
+        .where(
+            'taskname', 'like', `%${dataRequest.taskname}%`
+        )
+        .where(
+            'userid', dataRequest.userid
+        )
+        .where(
+            'isdelete', false
+        )
+        .select(
+            'id', 'taskname', 'description', 'createdate', 'modifydate', 'iscomplete'
+        )
+        .returning('*')
+        .bind(console)
+        .then(results => {
+            ctx.body = {
+                code: 1,
+                tasks: results,
+                message: 'Search task successed'
+            };
+        })
+        .catch(err => {
+            handlerLog.error(err);
+            ctx.body = {
+                code: 0,
+                message: err
             };
         });
 }
@@ -126,5 +203,8 @@ function deleteTaskById(ctx) {
 module.exports = {
     getAllTaskForUser,
     createTask,
-    deleteTaskById
+    deleteTaskById,
+    searchTaskByName,
+    getAllForHomePage,
+    searchTaskForHomePage
 };

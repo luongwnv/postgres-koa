@@ -1,32 +1,37 @@
 const Router = require('koa-router');
-const passport = require('koa-passport');
-const fs = require('fs');
-const path = require('path');
 
-const helpers = require('../helper/helpers');
-const jwt = require("../auth/jwt");
 const taskService = require('../services/taskService');
-const auth = require('../auth/jwt');
-const authenticate = require('../auth/jwt')
+const auth = require("../middleware/authenticated");
+const jwt = require("../middleware/jwt");
+const authenticated = auth.authentication();
 
 const BASE_URL = `/api`;
 
 const router = new Router();
 
-// get all tat ca cac task
-router.post(BASE_URL + '/tasks', async(ctx) => {
+router.post(`${BASE_URL}/task`, authenticated, doGetAllTask);
+router.post(`${BASE_URL}/update-task`, authenticated, doUpdateTask);
+router.post(`${BASE_URL}/delete-task`, authenticated, doDeleteTask);
+router.post(`${BASE_URL}/search-task`, authenticated, doSearchTask);
+
+// api get all task for user
+async function doGetAllTask(ctx) {
     await taskService.getAllTaskForUser(ctx);
-});
+}
 
-// them va sua task
-router.post(BASE_URL + '/add-task', async(ctx) => {
+// api insert and update task
+async function doUpdateTask(ctx) {
     await taskService.createTask(ctx);
-});
+}
 
-// xoa 1 task theo id
-router.post(BASE_URL + '/delete-task', async(ctx) => {
+// api delete task by id
+async function doDeleteTask(ctx) {
     await taskService.deleteTaskById(ctx);
-});
+}
 
+// api search task by task name
+async function doSearchTask(ctx) {
+    await taskService.searchTaskByName(ctx);
+}
 
 module.exports = router;

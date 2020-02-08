@@ -1,52 +1,61 @@
 const Router = require('koa-router');
-const passport = require('koa-passport');
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const helpers = require('../helper/helpers');
-const jwt = require("../auth/jwt");
+const jwt = require("../middleware/jwt");
 const userService = require('../services/userService');
-const auth = require('../auth/jwt');
+const handlerLog = require('../log/handlerLog');
+
+const BASE_URL = `/auth`;
 
 const router = new Router();
 
+router.post(`${BASE_URL}/register`, doRegister);
+router.post(`${BASE_URL}/login`, doLogin);
+
 // api register
-router.post('/auth/register', async(ctx) => {
+async function doRegister(ctx) {
     const user = await userService.checkUser(ctx);
-    if (user.length > 0) {
+    if (user) {
         ctx.body = {
             code: 0,
-            massage: 'Username existed'
+            message: 'Username existed.'
         };
     } else {
         await userService.addUser(ctx)
     }
-});
-
+}
 
 // api login
-router.post('/auth/login', async(ctx) => {
+async function doLogin(ctx){
     let userBody = ctx.request.body;
-    console.log('login');
     const user = await userService.checkUser(ctx);
-    let isLogin = bcrypt.compareSync(userBody.password, user[0].password)
-    if (isLogin) {
-        console.log(user);
-        ctx.body = {
-            code: 1,
-            userid: user[0].id,
-            massage: 'Login successed',
-            token: jwt.createToken({
-                username: user
-            })
-        };
+    if (user.length > 0) {
+        let isLogin = bcrypt.compareSync(userBody.password, user[0].password)
+        if (isLogin) {
+            let tokenGen = jwt.createToken({
+                username: user[0].id
+            });
+            handlerLog.info(user);
+            ctx.body = {
+                code: 1,
+                userid: user[0].id,
+                username: user[0].username,
+                message: 'Login successed.',
+                token: tokenGen
+            };
+        } else {
+            ctx.body = {
+                code: 0,
+                message: 'Login failed.',
+            };
+        }
     } else {
         ctx.body = {
             code: 0,
-            massage: 'Login failed',
+            message: 'User name not existed.',
         };
     }
-});
+
+}
 
 module.exports = router;
